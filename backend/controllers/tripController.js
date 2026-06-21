@@ -9,7 +9,7 @@ const genAI = new GoogleGenerativeAI(
 
 
 
-// Gemini Retry Function
+// Retry function
 
 const fetchWithRetry = async (
     requestFunction,
@@ -21,7 +21,6 @@ const fetchWithRetry = async (
 
         return await requestFunction();
 
-
     } catch(error) {
 
 
@@ -30,11 +29,6 @@ const fetchWithRetry = async (
             throw error;
 
         }
-
-
-        console.log(
-            `Retrying... Remaining attempts: ${retries}`
-        );
 
 
         await new Promise(resolve =>
@@ -56,24 +50,18 @@ const fetchWithRetry = async (
 
 
 
-// Create Trip with Gemini
+// Create Trip
 
 const createTrip = async(req,res)=>{
-
 
     try{
 
 
         const {
-
             destination,
-
             durationDays,
-
             budgetTier,
-
             interests
-
 
         } = req.body;
 
@@ -89,7 +77,6 @@ const createTrip = async(req,res)=>{
             model:"gemini-2.5-flash"
 
         });
-
 
 
 
@@ -110,54 +97,7 @@ Interests:
 ${interests.join(",")}
 
 
-Return ONLY JSON.
-
-Format:
-
-{
- "itinerary":[
-  {
-   "dayNumber":1,
-   "activities":[
-    {
-     "title":"",
-     "description":"",
-     "estimatedCostUSD":0,
-     "timeOfDay":"Morning"
-    }
-   ]
-  }
- ],
-
-
- "hotels":[
-  {
-   "name":"",
-   "tier":"",
-   "estimatedCostNightUSD":0,
-   "rating":""
-  }
- ],
-
-
- "estimatedBudget":{
-   "transport":0,
-   "accommodation":0,
-   "food":0,
-   "activities":0,
-   "total":0
- },
-
-
- "packingList":[
-  {
-   "item":"",
-   "category":"Documents",
-   "isPacked":false
-  }
- ]
-
-}
+Return only JSON.
 
 `;
 
@@ -165,18 +105,17 @@ Format:
 
         const result = await fetchWithRetry(
 
-            () => model.generateContent(prompt)
+            ()=>model.generateContent(prompt)
 
         );
 
 
 
-        const response = result.response.text();
+        const aiData = JSON.parse(
 
+            result.response.text()
 
-
-        const aiData = JSON.parse(response);
-
+        );
 
 
 
@@ -192,16 +131,13 @@ Format:
 
             interests,
 
-
             itinerary: aiData.itinerary,
 
             hotels: aiData.hotels,
 
-            estimatedBudget:
-            aiData.estimatedBudget,
+            estimatedBudget: aiData.estimatedBudget,
 
-            packingList:
-            aiData.packingList
+            packingList: aiData.packingList
 
         });
 
@@ -218,14 +154,12 @@ Format:
     }catch(error){
 
 
-        console.log(error);
-
-
         res.status(500).json({
 
-            message:"Trip generation failed"
+            message:error.message
 
         });
+
 
     }
 
@@ -236,8 +170,7 @@ Format:
 
 
 
-
-// Get logged in user's trips
+// Get Trips
 
 const getTrips = async(req,res)=>{
 
@@ -275,8 +208,6 @@ const getTrips = async(req,res)=>{
 
 
 
-
-
 // Update Trip
 
 const updateTrip = async(req,res)=>{
@@ -307,7 +238,6 @@ const updateTrip = async(req,res)=>{
 
 
 
-
         Object.assign(
 
             trip,
@@ -318,9 +248,7 @@ const updateTrip = async(req,res)=>{
 
 
 
-
         const updatedTrip = await trip.save();
-
 
 
 
@@ -346,13 +274,71 @@ const updateTrip = async(req,res)=>{
 
 
 
-module.exports = {
 
+// Delete Trip
+
+const deleteTrip = async(req,res)=>{
+
+
+    try{
+
+
+        const trip = await Trip.findOneAndDelete({
+
+            _id:req.params.id,
+
+            userId:req.user.id
+
+        });
+
+
+
+        if(!trip){
+
+            return res.status(404).json({
+
+                message:"Trip not found"
+
+            });
+
+        }
+
+
+
+        res.json({
+
+            message:"Trip deleted successfully"
+
+        });
+
+
+
+    }catch(error){
+
+
+        res.status(500).json({
+
+            message:error.message
+
+        });
+
+
+    }
+
+};
+
+
+
+
+
+module.exports = {
 
     createTrip,
 
     getTrips,
 
-    updateTrip
+    updateTrip,
+
+    deleteTrip
 
 };

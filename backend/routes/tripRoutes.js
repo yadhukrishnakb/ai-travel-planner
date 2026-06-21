@@ -9,32 +9,62 @@ const authMiddleware = require("../middleware/auth");
 
 
 
-// Create new AI trip
+
+// Create trip
 
 router.post(
+
     "/",
+
     authMiddleware,
+
     tripController.createTrip
+
 );
 
 
 
-// Get logged-in user's trips
+
+// Get trips
 
 router.get(
+
     "/",
+
     authMiddleware,
+
     tripController.getTrips
+
 );
 
 
 
-// Update trip (itinerary / packing updates)
+
+// Update trip
 
 router.put(
+
     "/:id",
+
     authMiddleware,
+
     tripController.updateTrip
+
+);
+
+
+
+
+// Delete trip
+
+router.delete(
+
+    "/:id",
+
+    authMiddleware,
+
+    tripController.deleteTrip
+
 );
 
 
